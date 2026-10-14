@@ -6,7 +6,7 @@ using System.Reflection;
 using System.ComponentModel.DataAnnotations;
 using OpenKh.Bbs;
 using System.Collections.Generic;
-using Assimp;
+using SharpAssimp;
 
 namespace OpenKh.Command.PAMtoFBXConverter
 {
@@ -60,8 +60,8 @@ namespace OpenKh.Command.PAMtoFBXConverter
             Pmo pmo = Pmo.Read(pmoStream);
             Pam pam = Pam.Read(pamStream);
 
-            Assimp.Scene nScene = GetPMOScene(pmo);
-            List<Assimp.Animation> FBXAnims = PAMtoFBXAnim(pmo, pam);
+            SharpAssimp.Scene nScene = GetPMOScene(pmo);
+            List<SharpAssimp.Animation> FBXAnims = PAMtoFBXAnim(pmo, pam);
             nScene.Animations.AddRange(FBXAnims);
 
             pmoStream.Close();
@@ -77,10 +77,10 @@ namespace OpenKh.Command.PAMtoFBXConverter
             
         }
 
-        private static Assimp.Scene GetPMOScene(Pmo pmo)
+        private static SharpAssimp.Scene GetPMOScene(Pmo pmo)
         {
-            Assimp.Scene scene = new Assimp.Scene();
-            scene.RootNode = new Assimp.Node("root");
+            SharpAssimp.Scene scene = new SharpAssimp.Scene();
+            scene.RootNode = new SharpAssimp.Node("root");
 
             // Add materials.
             List<Material> matList = new List<Material>();
@@ -98,26 +98,25 @@ namespace OpenKh.Command.PAMtoFBXConverter
             {
                 Pmo.BoneData bn = pmo.boneList[b];
                 
-                Assimp.Matrix4x4 mtx = new Assimp.Matrix4x4();
-                mtx.A1 = bn.Transform.M11;
-                mtx.A2 = bn.Transform.M12;
-                mtx.A3 = bn.Transform.M13;
-                mtx.A4 = bn.Transform.M14;
-                mtx.B1 = bn.Transform.M21;
-                mtx.B2 = bn.Transform.M22;
-                mtx.B3 = bn.Transform.M23;
-                mtx.B4 = bn.Transform.M24;
-                mtx.C1 = bn.Transform.M31;
-                mtx.C2 = bn.Transform.M32;
-                mtx.C3 = bn.Transform.M33;
-                mtx.C4 = bn.Transform.M34;
-                mtx.D1 = bn.Transform.M41;
-                mtx.D2 = bn.Transform.M42;
-                mtx.D3 = bn.Transform.M43;
-                mtx.D4 = bn.Transform.M44;
+                System.Numerics.Matrix4x4 mtx = new System.Numerics.Matrix4x4();
+                mtx.M11 = bn.Transform.M11;
+                mtx.M12 = bn.Transform.M12;
+                mtx.M13 = bn.Transform.M13;
+                mtx.M14 = bn.Transform.M14;
+                mtx.M21 = bn.Transform.M21;
+                mtx.M22 = bn.Transform.M22;
+                mtx.M23 = bn.Transform.M23;
+                mtx.M24 = bn.Transform.M24;
+                mtx.M31 = bn.Transform.M31;
+                mtx.M32 = bn.Transform.M32;
+                mtx.M33 = bn.Transform.M33;
+                mtx.M34 = bn.Transform.M34;
+                mtx.M41 = bn.Transform.M41;
+                mtx.M42 = bn.Transform.M42;
+                mtx.M43 = bn.Transform.M43;
+                mtx.M44 = bn.Transform.M44;
 
-                Assimp.Matrix4x4 nd_mtx = mtx;
-                nd_mtx.Transpose();
+                System.Numerics.Matrix4x4 nd_mtx = System.Numerics.Matrix4x4.Transpose(mtx);
                 if (bn.ParentBoneIndex == 0xFFFF)
                 {
                     
@@ -130,9 +129,9 @@ namespace OpenKh.Command.PAMtoFBXConverter
                 {
                     Node curNode = new Node(bn.JointName, Skeleton[bn.ParentBoneIndex]);
                     
-                    nd_mtx.A4 *= 100.0f;
-                    nd_mtx.B4 *= 100.0f;
-                    nd_mtx.C4 *= 100.0f;
+                    nd_mtx.M14 *= 100.0f;
+                    nd_mtx.M24 *= 100.0f;
+                    nd_mtx.M34 *= 100.0f;
                     
                     curNode.Transform = nd_mtx;
                     Skeleton.Add(curNode);
@@ -143,19 +142,19 @@ namespace OpenKh.Command.PAMtoFBXConverter
             // Add meshes.
             for (int i = 0; i < pmo.Meshes.Count; i++)
             {
-                Assimp.Mesh mesh = new Assimp.Mesh($"Mesh{i}", Assimp.PrimitiveType.Triangle);
+                SharpAssimp.Mesh mesh = new SharpAssimp.Mesh($"Mesh{i}", SharpAssimp.PrimitiveType.Triangle);
                 Pmo.MeshChunks chunk = pmo.Meshes[i];
 
                 // Add vertices, vertex color and normals.
                 for (int j = 0; j < chunk.vertices.Count; j++)
                 {
-                    mesh.Vertices.Add(new Assimp.Vector3D(
+                    mesh.Vertices.Add(new System.Numerics.Vector3(
                         chunk.vertices[j].X * pmo.header.ModelScale * 100.0f,
                         chunk.vertices[j].Y * pmo.header.ModelScale * 100.0f,
                         chunk.vertices[j].Z * pmo.header.ModelScale * 100.0f));
 
-                    mesh.VertexColorChannels[0].Add(new Color4D(1.0f, 1.0f, 1.0f, 1.0f));
-                    mesh.Normals.Add(new Vector3D());
+                    mesh.VertexColorChannels[0].Add(new System.Numerics.Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+                    mesh.Normals.Add(new System.Numerics.Vector3());
 
                 }
                 mesh.SetIndices(chunk.Indices.ToArray(), 3);
@@ -175,30 +174,30 @@ namespace OpenKh.Command.PAMtoFBXConverter
                             currentBone = pmo.boneList[currentIndex];
 
                             string boneName = currentBone.JointName;
-                            Assimp.Matrix4x4 mtx = new Assimp.Matrix4x4();
-                            mtx.A1 = currentBone.Transform.M11;
-                            mtx.A2 = currentBone.Transform.M12;
-                            mtx.A3 = currentBone.Transform.M13;
-                            mtx.A4 = currentBone.Transform.M14;
-                            mtx.B1 = currentBone.Transform.M21;
-                            mtx.B2 = currentBone.Transform.M22;
-                            mtx.B3 = currentBone.Transform.M23;
-                            mtx.B4 = currentBone.Transform.M24;
-                            mtx.C1 = currentBone.Transform.M31;
-                            mtx.C2 = currentBone.Transform.M32;
-                            mtx.C3 = currentBone.Transform.M33;
-                            mtx.C4 = currentBone.Transform.M34;
-                            mtx.D1 = currentBone.Transform.M41;
-                            mtx.D2 = currentBone.Transform.M42;
-                            mtx.D3 = currentBone.Transform.M43;
-                            mtx.D4 = currentBone.Transform.M44;
+                            System.Numerics.Matrix4x4 mtx = new System.Numerics.Matrix4x4();
+                            mtx.M11 = currentBone.Transform.M11;
+                            mtx.M12 = currentBone.Transform.M12;
+                            mtx.M13 = currentBone.Transform.M13;
+                            mtx.M14 = currentBone.Transform.M14;
+                            mtx.M21 = currentBone.Transform.M21;
+                            mtx.M22 = currentBone.Transform.M22;
+                            mtx.M23 = currentBone.Transform.M23;
+                            mtx.M24 = currentBone.Transform.M24;
+                            mtx.M31 = currentBone.Transform.M31;
+                            mtx.M32 = currentBone.Transform.M32;
+                            mtx.M33 = currentBone.Transform.M33;
+                            mtx.M34 = currentBone.Transform.M34;
+                            mtx.M41 = currentBone.Transform.M41;
+                            mtx.M42 = currentBone.Transform.M42;
+                            mtx.M43 = currentBone.Transform.M43;
+                            mtx.M44 = currentBone.Transform.M44;
                             Matrix3x3 mtx3 = new Matrix3x3(mtx);
 
-                            mtx.Transpose();
+                            mtx = System.Numerics.Matrix4x4.Transpose(mtx);
 
-                            mtx.A4 *= 100.0f;
-                            mtx.B4 *= 100.0f;
-                            mtx.C4 *= 100.0f;
+                            mtx.M14 *= 100.0f;
+                            mtx.M24 *= 100.0f;
+                            mtx.M34 *= 100.0f;
 
                             
                             mtx3.Transpose();
@@ -251,13 +250,13 @@ namespace OpenKh.Command.PAMtoFBXConverter
             return scene;
         }
 
-        private static List<Assimp.Animation> PAMtoFBXAnim(Pmo pmo, Pam pam)
+        private static List<SharpAssimp.Animation> PAMtoFBXAnim(Pmo pmo, Pam pam)
         {
-            List<Assimp.Animation> animationList = new List<Assimp.Animation>();
+            List<SharpAssimp.Animation> animationList = new List<SharpAssimp.Animation>();
 
             for(int i = 0; i < pam.header.AnimationCount; i++)
             {
-                Assimp.Animation anim = new Assimp.Animation();
+                SharpAssimp.Animation anim = new SharpAssimp.Animation();
                 anim.Name = pam.animList[i].AnimEntry.AnimationName;
                 anim.DurationInTicks = pam.animList[i].AnimHeader.FrameCount;
                 anim.TicksPerSecond = pam.animList[i].AnimHeader.Framerate;
@@ -299,14 +298,14 @@ namespace OpenKh.Command.PAMtoFBXConverter
             return animationList;
         }
 
-        private static void AddTranslationAtKeyframe(List<VectorKey> Keys, int keyframe, Vector3D value, double framerate = 30.0)
+        private static void AddTranslationAtKeyframe(List<VectorKey> Keys, int keyframe, System.Numerics.Vector3 value, double framerate = 30.0)
         {
             double frametick = 1.0 / framerate;
             double keyframeTime = frametick * keyframe;
             Keys.Add(new VectorKey(keyframeTime, value));
         }
 
-        private static void AddRotationAtKeyframe(List<QuaternionKey> Keys, int keyframe, Assimp.Quaternion value, double framerate = 30.0)
+        private static void AddRotationAtKeyframe(List<QuaternionKey> Keys, int keyframe, System.Numerics.Quaternion value, double framerate = 30.0)
         {
             double frametick = 1.0 / framerate;
             double keyframeTime = frametick * keyframe;
@@ -316,13 +315,13 @@ namespace OpenKh.Command.PAMtoFBXConverter
         public class ChannelTranslationData
         {
             public int keyframeID = 0;
-            public Vector3D Translation = new Vector3D();
+            public System.Numerics.Vector3 Translation = new System.Numerics.Vector3();
         }
 
         public class ChannelRotationData
         {
             public int keyframeID = 0;
-            public Assimp.Quaternion Rotation = new Assimp.Quaternion();
+            public System.Numerics.Quaternion Rotation = new System.Numerics.Quaternion();
         }
 
         public class ChannelData

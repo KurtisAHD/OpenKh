@@ -123,8 +123,8 @@ namespace OpenKh.Game.Entities
         public static MeshGroup FromFbx(GraphicsDevice graphics, string filePath)
         {
             const float Scale = 96.0f;
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(filePath, Assimp.PostProcessSteps.PreTransformVertices);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(filePath, SharpAssimp.PostProcessSteps.PreTransformVertices);
             var baseFilePath = Path.GetDirectoryName(filePath);
 
             return new MeshGroup()

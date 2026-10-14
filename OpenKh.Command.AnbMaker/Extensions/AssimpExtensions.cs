@@ -1,24 +1,25 @@
-using Assimp;
+using OpenKh.Engine;
+using SharpAssimp;
 using System.Numerics;
 
 namespace OpenKh.Command.AnbMaker.Extensions
 {
+    /// <remarks>
+    /// SharpAssimp uses System.Numerics types directly, so the vector/quaternion conversions are identities.
+    /// Its matrices keep Assimp's row-major layout, which is the transpose of System.Numerics.
+    /// </remarks>
     internal static class AssimpExtensions
     {
-        public static Vector3D ToAssimpVector3D(this Vector3 it) =>
-            new Vector3D(it.X, it.Y, it.Z);
+        public static Vector3 ToAssimpVector3D(this Vector3 it) => it;
 
-        public static Assimp.Quaternion ToAssimpQuaternion(this System.Numerics.Quaternion it) =>
-            new Assimp.Quaternion(it.W, it.X, it.Y, it.Z);
+        public static Quaternion ToAssimpQuaternion(this Quaternion it) => it;
 
-        public static Vector3 ToDotNetVector3(this Vector3D it) =>
-            new Vector3(it.X, it.Y, it.Z);
+        public static Vector3 ToDotNetVector3(this Vector3 it) => it;
 
-        public static System.Numerics.Quaternion ToDotNetQuaternion(this Assimp.Quaternion it) =>
-            new System.Numerics.Quaternion(it.X, it.Y, it.Z, it.W);
+        public static Quaternion ToDotNetQuaternion(this Quaternion it) => it;
 
 
-        public static Assimp.Quaternion GetInterpolatedQuaternion(this List<QuaternionKey> keys, double time)
+        public static Quaternion GetInterpolatedQuaternion(this List<QuaternionKey> keys, double time)
         {
             if (keys.Any())
             {
@@ -40,7 +41,7 @@ namespace OpenKh.Command.AnbMaker.Extensions
                     {
                         float ratio = (float)((time - time0) / (time1 - time0));
 
-                        return Assimp.Quaternion.Slerp(
+                        return AssimpMath.Slerp(
                             keys[x].Value,
                             keys[x + 1].Value,
                             ratio
@@ -49,10 +50,10 @@ namespace OpenKh.Command.AnbMaker.Extensions
                 }
             }
 
-            return new Assimp.Quaternion(1, 0, 0, 0);
+            return Quaternion.Identity;
         }
 
-        public static Vector3D GetInterpolatedVector(this List<VectorKey> keys, double time)
+        public static Vector3 GetInterpolatedVector(this List<VectorKey> keys, double time)
         {
             if (keys.Any())
             {
@@ -79,15 +80,10 @@ namespace OpenKh.Command.AnbMaker.Extensions
                 }
             }
 
-            return new Vector3D(0, 0, 0);
+            return new Vector3(0, 0, 0);
         }
 
-        public static System.Numerics.Matrix4x4 ToDotNetMatrix4x4(this Assimp.Matrix4x4 m) =>
-            new System.Numerics.Matrix4x4(
-                m.A1, m.B1, m.C1, m.D1,
-                m.A2, m.B2, m.C2, m.D2,
-                m.A3, m.B3, m.C3, m.D3,
-                m.A4, m.B4, m.C4, m.D4
-            );
+        public static Matrix4x4 ToDotNetMatrix4x4(this Matrix4x4 m) =>
+            Matrix4x4.Transpose(m);
     }
 }

@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -341,7 +341,7 @@ namespace OpenKh.Tools.Kh2MsetMotionEditor
                             _loadedModel.MdlxRenderableList[0].Model is Mdlx)
                             {
                                 OpenKh.Engine.Parsers.MdlxParser mParser = new OpenKh.Engine.Parsers.MdlxParser(_loadedModel.MdlxRenderableList[0].Model);
-                                Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(mParser);
+                                SharpAssimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(mParser);
 
                                 if (filename != "")
                                 {
@@ -400,9 +400,9 @@ namespace OpenKh.Tools.Kh2MsetMotionEditor
                                                 Microsoft.Xna.Framework.Vector3 translate;
                                                 matrices[b].Decompose(out scale, out rotate, out translate);
 
-                                                channel.ScalingKeys.Add(new VectorKey(timeKey, new Vector3D(scale.X, scale.Y, scale.Z)));
-                                                channel.RotationKeys.Add(new QuaternionKey(timeKey, new Assimp.Quaternion(rotate.W, rotate.X, rotate.Y, rotate.Z)));
-                                                channel.PositionKeys.Add(new VectorKey(timeKey, new Vector3D(translate.X, translate.Y, translate.Z)));
+                                                channel.ScalingKeys.Add(new VectorKey(timeKey, new Vector3(scale.X, scale.Y, scale.Z)));
+                                                channel.RotationKeys.Add(new QuaternionKey(timeKey, new System.Numerics.Quaternion(rotate.X, rotate.Y, rotate.Z, rotate.W)));
+                                                channel.PositionKeys.Add(new VectorKey(timeKey, new Vector3(translate.X, translate.Y, translate.Z)));
                                             }
                                         }
 

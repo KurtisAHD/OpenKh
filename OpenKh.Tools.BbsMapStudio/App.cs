@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using ImGuiNET;
 using Microsoft.Xna.Framework.Input;
 using OpenKh.Tools.Common.CustomImGui;

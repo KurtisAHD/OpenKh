@@ -110,7 +110,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.ViewModels
         }
         public void replaceModel(string filePath)
         {
-            Assimp.Scene scene = AssimpGeneric.getAssimpSceneFromFile(filePath);
+            SharpAssimp.Scene scene = AssimpGeneric.getAssimpSceneFromFile(filePath);
 
             TextureFile = MdlxEditorImporter.createModelTexture(scene, filePath);
 

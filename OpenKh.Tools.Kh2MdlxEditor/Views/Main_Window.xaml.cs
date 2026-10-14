@@ -136,7 +136,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Views
             if(mainWiewModel.ModelFile != null)
             {
                 MdlxParser mParser = new MdlxParser(mainWiewModel.ModelFile);
-                Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(mParser);
+                SharpAssimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(mParser);
 
                 System.Windows.Forms.SaveFileDialog sfd;
                 sfd = new System.Windows.Forms.SaveFileDialog();

@@ -48,8 +48,8 @@ namespace OpenKh.Command.PmoConverter
 
         public static List<string> TexList { get; set; }
         public static List<Tm2> TextureData { get; set; }
-        public static List<Assimp.Bone> BoneData { get; set; }
-        public static List<Assimp.Node> NodeData { get; set; }
+        public static List<SharpAssimp.Bone> BoneData { get; set; }
+        public static List<SharpAssimp.Node> NodeData { get; set; }
 
 
         private void OnExecute()
@@ -212,7 +212,7 @@ namespace OpenKh.Command.PmoConverter
                 Pmo.BoneData bn = new Pmo.BoneData();
                 bn.BoneIndex = (ushort)b;
 
-                Assimp.Node curNode = new Assimp.Node();
+                SharpAssimp.Node curNode = new SharpAssimp.Node();
                 ushort p = 0;
                 foreach(var nd in NodeData)
                 {
@@ -359,16 +359,16 @@ namespace OpenKh.Command.PmoConverter
         public static MeshGroup FromFbx(string filePath)
         {
             const float Scale = 1.0f;
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(filePath, Assimp.PostProcessSteps.PreTransformVertices);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(filePath, SharpAssimp.PostProcessSteps.PreTransformVertices);
             var BoneScene = assimp.ImportFile(filePath);
             var baseFilePath = Path.GetDirectoryName(filePath);
             TexList = new List<string>();
             TextureData = new List<Tm2>();
-            BoneData = new List<Assimp.Bone>();
-            NodeData = new List<Assimp.Node>();
+            BoneData = new List<SharpAssimp.Bone>();
+            NodeData = new List<SharpAssimp.Node>();
 
-            foreach(Assimp.Material mat in scene.Materials)
+            foreach(SharpAssimp.Material mat in scene.Materials)
             {
                 Stream str = null;
                 var name = Path.GetFileName(mat.TextureDiffuse.FilePath);
@@ -386,7 +386,7 @@ namespace OpenKh.Command.PmoConverter
                 }
             }
 
-            Assimp.Bone rBone = new Assimp.Bone();
+            SharpAssimp.Bone rBone = new SharpAssimp.Bone();
             foreach(var m in BoneScene.Meshes)
             {
                 foreach(var bn in m.Bones)
@@ -411,16 +411,16 @@ namespace OpenKh.Command.PmoConverter
                             vertices[i].Z = x.Vertices[i].Z * Scale;
                             vertices[i].Tu = x.TextureCoordinateChannels[0][i].X;
                             vertices[i].Tv = 1.0f - x.TextureCoordinateChannels[0][i].Y;
-                            vertices[i].R = x.VertexColorChannels[0][i].R;
-                            vertices[i].G = x.VertexColorChannels[0][i].G;
-                            vertices[i].B = x.VertexColorChannels[0][i].B;
-                            vertices[i].A = x.VertexColorChannels[0][i].A;
+                            vertices[i].R = x.VertexColorChannels[0][i].X;
+                            vertices[i].G = x.VertexColorChannels[0][i].Y;
+                            vertices[i].B = x.VertexColorChannels[0][i].Z;
+                            vertices[i].A = x.VertexColorChannels[0][i].W;
                         }
                         
                         return new MeshDescriptor
                         {
                             Vertices = vertices,
-                            Indices = x.GetIndices(),
+                            Indices = x.GetIndices().ToArray(),
                             IsOpaque = true,
                             TextureIndex = x.MaterialIndex
                         };

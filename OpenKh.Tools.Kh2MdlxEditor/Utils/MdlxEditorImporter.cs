@@ -17,7 +17,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
         public static bool KEEP_ORIGINAL_SKELETON = true;
 
         public static Dictionary<int, int> materialToTexture = null;
-        public static ModelTexture createModelTexture(Assimp.Scene scene, string filePath)
+        public static ModelTexture createModelTexture(SharpAssimp.Scene scene, string filePath)
         {
             materialToTexture = new Dictionary<int, int>();
 
@@ -66,7 +66,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
             return ModelTexture.Read(tempStream);
         }
 
-        public static ModelSkeletal replaceMeshModelSkeletal(Assimp.Scene scene, ModelSkeletal oldModel, string filePath, ModelCollision collisionFile = null)
+        public static ModelSkeletal replaceMeshModelSkeletal(SharpAssimp.Scene scene, ModelSkeletal oldModel, string filePath, ModelCollision collisionFile = null)
         {
             ModelSkeletal model = new ModelSkeletal();
 
@@ -106,7 +106,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
                 if (DEBUG_ONLY_THESE_MESHES.Count != 0 && !DEBUG_ONLY_THESE_MESHES.Contains(i))
                     continue;
 
-                Assimp.Mesh mesh = scene.Meshes[i];
+                SharpAssimp.Mesh mesh = scene.Meshes[i];
 
                 VifMesh vifMesh = Kh2MdlxAssimp.getVifMeshFromAssimp(mesh, boneMatrices);
                 List<DmaVifPacket> dmaVifPackets = VifProcessor.vifMeshToDmaVifPackets(vifMesh);
@@ -148,11 +148,11 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
             }
         }
 
-        public static List<ModelCommon.Bone> getSkeleton(Assimp.Scene scene)
+        public static List<ModelCommon.Bone> getSkeleton(SharpAssimp.Scene scene)
         {
             List<ModelCommon.Bone> mdlxBones = new List<ModelCommon.Bone>();
 
-            List<Assimp.Node> assimpBones = getChildren(scene.RootNode);
+            List<SharpAssimp.Node> assimpBones = getChildren(scene.RootNode);
             assimpBones.RemoveAt(0); // Remove Assimp root
 
             // Remove extra bones - Added with this tool due to a bug somehow when parsing to assimp
@@ -178,7 +178,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
 
             for (int i = 0; i < assimpBones.Count; i++)
             {
-                Assimp.Node assimpBone = assimpBones[i];
+                SharpAssimp.Node assimpBone = assimpBones[i];
                 ModelCommon.Bone bone = new ModelCommon.Bone();
                 bone.Index = (short)i;
                 bone.ParentIndex = (short)assimpBones.IndexOf(assimpBone.Parent);
@@ -235,11 +235,11 @@ namespace OpenKh.Tools.Kh2MdlxEditor.Utils
         }
 
         private static int preventLoopLock = 0xFFFF;
-        public static List<Assimp.Node> getChildren(Assimp.Node assimpNode)
+        public static List<SharpAssimp.Node> getChildren(SharpAssimp.Node assimpNode)
         {
-            List<Assimp.Node> children = new List<Assimp.Node>();
+            List<SharpAssimp.Node> children = new List<SharpAssimp.Node>();
 
-            foreach (Assimp.Node node in assimpNode.Children)
+            foreach (SharpAssimp.Node node in assimpNode.Children)
             {
                 preventLoopLock--;
                 if (preventLoopLock <= 0)

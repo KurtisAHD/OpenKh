@@ -43,7 +43,7 @@ namespace OpenKh.Tools.Kh2MapStudio.Models
 
         public Coct Coct { get; }
 
-        public Assimp.Scene Scene => GetScene(Coct);
+        public SharpAssimp.Scene Scene => GetScene(Coct);
 
         public bool IsVisible { get; set; }
 
@@ -79,11 +79,11 @@ namespace OpenKh.Tools.Kh2MapStudio.Models
             return vb;
         }
 
-        private static Assimp.Scene GetScene(Coct coct)
+        private static SharpAssimp.Scene GetScene(Coct coct)
         {
             var color = new Color(1f, 1f, 1f, 1f);
-            var scene = new Assimp.Scene();
-            scene.RootNode = new Assimp.Node("root");
+            var scene = new SharpAssimp.Scene();
+            scene.RootNode = new SharpAssimp.Node("root");
 
             for (int i = 0; i < coct.Nodes.Count; i++)
             {
@@ -92,7 +92,7 @@ namespace OpenKh.Tools.Kh2MapStudio.Models
                 foreach (var mesh in meshGroup.Meshes)
                 {
                     var faceIndex = 0;
-                    var sceneMesh = new Assimp.Mesh($"Mesh{i}_{j}", Assimp.PrimitiveType.Triangle);
+                    var sceneMesh = new SharpAssimp.Mesh($"Mesh{i}_{j}", SharpAssimp.PrimitiveType.Triangle);
 
                     foreach (var item in mesh.Collisions)
                     {
@@ -112,7 +112,7 @@ namespace OpenKh.Tools.Kh2MapStudio.Models
                                 v1.X, v1.Y, v1.Z,
                                 v3.X, v3.Y, v3.Z,
                                 v4.X, v4.Y, v4.Z).ToList();
-                            sceneMesh.Faces.Add(new Assimp.Face(new int[]
+                            sceneMesh.Faces.Add(new SharpAssimp.Face(new int[]
                             {
                                 faceIndex++, faceIndex++, faceIndex++,
                                 faceIndex++, faceIndex++, faceIndex++
@@ -125,14 +125,14 @@ namespace OpenKh.Tools.Kh2MapStudio.Models
                                 v1.X, v1.Y, v1.Z,
                                 v2.X, v2.Y, v2.Z,
                                 v3.X, v3.Y, v3.Z).ToList();
-                            sceneMesh.Faces.Add(new Assimp.Face(new int[]
+                            sceneMesh.Faces.Add(new SharpAssimp.Face(new int[]
                             {
                                 faceIndex++, faceIndex++, faceIndex++
                             }));
                         }
 
                         sceneMesh.Vertices.AddRange(vertices
-                            .Select(x => new Assimp.Vector3D
+                            .Select(x => new System.Numerics.Vector3
                             {
                                 X = x.Position.X,
                                 Y = x.Position.Y,

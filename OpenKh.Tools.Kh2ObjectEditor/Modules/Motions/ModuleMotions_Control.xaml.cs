@@ -1,9 +1,10 @@
 using Microsoft.Win32;
-using OpenKh.AssimpUtils;
 using OpenKh.Kh2;
+using OpenKh.Kh2Fbx;
 using OpenKh.Tools.Kh2ObjectEditor.Classes;
 using OpenKh.Tools.Kh2ObjectEditor.Modules.Motions;
 using OpenKh.Tools.Kh2ObjectEditor.Services;
+using OpenKh.Tools.Kh2ObjectEditor.Utils;
 using OpenKh.Tools.Kh2ObjectEditor.ViewModel;
 using System;
 using System.IO;
@@ -139,40 +140,29 @@ namespace OpenKh.Tools.Kh2ObjectEditor.Views
             }
 
             MotionSelector_Wrapper item = (MotionSelector_Wrapper)MotionList.SelectedItem;
-            AnimationBinary animation;
-            using (MemoryStream memStream = new MemoryStream(item.LinkedSubfile))
+            if (!Kh2FbxExport.IsExportable(item))
             {
-                animation = new AnimationBinary(memStream);
+                MessageBox.Show("This entry has no animation to export.", "Export FBX", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
 
-            Kh2.Models.ModelSkeletal model = null;
-            foreach(Bar.Entry barEntry in MdlxService.Instance.MdlxBar)
-            {
-                if(barEntry.Type == Bar.EntryType.Model)
-                {
-                    model = Kh2.Models.ModelSkeletal.Read(barEntry.Stream);
-                    barEntry.Stream.Position = 0;
-                }
-            }
-            Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
-            Kh2MdlxAssimp.AddAnimation(scene, MdlxService.Instance.MdlxBar, animation);
+            string fbxPath = AskFbxPath("Export animated model", MdlxService.Instance.MdlxPath + "." + Kh2FbxExport.ClipName(item));
+            if (fbxPath == null)
+                return;
 
-            System.Windows.Forms.SaveFileDialog sfd;
-            sfd = new System.Windows.Forms.SaveFileDialog();
-            sfd.Title = "Export animated model";
-            sfd.FileName = MdlxService.Instance.MdlxPath + "." + AssimpGeneric.GetFormatFileExtension(AssimpGeneric.FileFormat.fbx);
-            sfd.ShowDialog();
-            if (sfd.FileName != "")
-            {
-                string dirPath = Path.GetDirectoryName(sfd.FileName);
-
-                if (!Directory.Exists(dirPath))
-                    return;
-
-                dirPath += "\\";
-
-                AssimpGeneric.ExportScene(scene, AssimpGeneric.FileFormat.fbx, sfd.FileName);
-            }
+            Kh2.Models.ModelSkeletal model = Kh2FbxExport.LoadModel();
+            SampledClip clip = Kh2FbxExport.Sample(model, Kh2FbxExport.GetMdlxBytes(), item);
+            Kh2FbxExport.Write(fbxPath, model, new[] { clip });
+        }
+        private static string AskFbxPath(string title, string fileName)
+        {
+            System.Windows.Forms.SaveFileDialog sfd = new System.Windows.Forms.SaveFileDialog();
+            sfd.Title = title;
+            sfd.FileName = fileName + ".fbx";
+            sfd.Filter = "FBX (*.fbx)|*.fbx";
+            if (sfd.ShowDialog() != System.Windows.Forms.DialogResult.OK || sfd.FileName == "")
+                return null;
+            return Directory.Exists(Path.GetDirectoryName(sfd.FileName)) ? sfd.FileName : null;
         }
         public void Motion_Import(object sender, RoutedEventArgs e)
         {

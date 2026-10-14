@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using OpenKh.Command.AnbMaker.Utils.AssimpAnimSource;
 using OpenKh.Command.AnbMaker.Utils.Builder;
 using OpenKh.Command.AnbMaker.Utils.Builder.Models;
@@ -116,8 +116,8 @@ namespace OpenKh.Tools.Kh2ObjectEditor.Modules.Motions
         public void Motion_Import(int index, string animationPath)
         {
             // Find rootNode
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(animationPath, Assimp.PostProcessSteps.None);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(animationPath, SharpAssimp.PostProcessSteps.None);
 
             string rootNodeName = getRootNodeName(scene.RootNode);
 

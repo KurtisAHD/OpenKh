@@ -24,7 +24,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.ViewModels
         }
 
         public string FilePath { get; set; }
-        public Assimp.Scene ExternalModel { get; set; }
+        public SharpAssimp.Scene ExternalModel { get; set; }
         public ObservableCollection<ImportMeshOptions> MeshOptionsList { get; set; }
 
         public bool KeepShadow { get; set; }
@@ -62,7 +62,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.ViewModels
             ExternalModel = AssimpGeneric.getAssimpSceneFromFile(filepath);
 
             MeshOptionsList.Clear();
-            foreach (Assimp.Mesh mesh in ExternalModel.Meshes)
+            foreach (SharpAssimp.Mesh mesh in ExternalModel.Meshes)
             {
                 ImportMeshOptions meshOptions = new ImportMeshOptions();
                 meshOptions.Id = MeshOptionsList.Count;
@@ -77,7 +77,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.ViewModels
                 meshOptions.HasColors = true;
                 if (mesh.VertexColorChannels[0].Count > 0)
                 {
-                    foreach (Assimp.Color4D color in mesh.VertexColorChannels[0])
+                    foreach (System.Numerics.Vector4 color in mesh.VertexColorChannels[0])
                     {
                         if (color == null)
                         {
@@ -92,7 +92,7 @@ namespace OpenKh.Tools.Kh2MdlxEditor.ViewModels
                 meshOptions.HasNormals = true;
                 if (mesh.Normals.Count > 0)
                 {
-                    foreach (Assimp.Vector3D normal in mesh.Normals)
+                    foreach (System.Numerics.Vector3 normal in mesh.Normals)
                     {
                         if (normal == null)
                         {

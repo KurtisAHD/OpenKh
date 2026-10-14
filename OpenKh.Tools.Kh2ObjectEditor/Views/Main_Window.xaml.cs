@@ -1,6 +1,5 @@
 using Microsoft.Win32;
 using ModernWpf;
-using OpenKh.AssimpUtils;
 using OpenKh.Kh2;
 using OpenKh.Tools.Common.Wpf;
 using OpenKh.Tools.Kh2ObjectEditor.Services;
@@ -9,7 +8,6 @@ using OpenKh.Tools.Kh2ObjectEditor.ViewModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Windows.Media.Imaging;
 
 namespace OpenKh.Tools.Kh2ObjectEditor.Views
 {
@@ -165,55 +163,19 @@ namespace OpenKh.Tools.Kh2ObjectEditor.Views
         {
             if(MdlxService.Instance.ModelFile != null)
             {
-                Kh2.Models.ModelSkeletal model = null;
-                foreach (Bar.Entry barEntry in MdlxService.Instance.MdlxBar)
-                {
-                    if (barEntry.Type == Bar.EntryType.Model)
-                    {
-                        model = Kh2.Models.ModelSkeletal.Read(barEntry.Stream);
-                        barEntry.Stream.Position = 0;
-                    }
-                }
-
-                Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
-
                 System.Windows.Forms.SaveFileDialog sfd;
                 sfd = new System.Windows.Forms.SaveFileDialog();
                 sfd.Title = "Export model";
-                sfd.FileName = MdlxService.Instance.MdlxPath + "." + AssimpGeneric.GetFormatFileExtension(AssimpGeneric.FileFormat.fbx);
-                sfd.ShowDialog();
-                if (sfd.FileName != "")
+                sfd.FileName = MdlxService.Instance.MdlxPath + ".fbx";
+                sfd.Filter = "FBX (*.fbx)|*.fbx";
+                if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK && sfd.FileName != "")
                 {
-                    string dirPath = Path.GetDirectoryName(sfd.FileName);
-
-                    if (!Directory.Exists(dirPath))
+                    if (!Directory.Exists(Path.GetDirectoryName(sfd.FileName)))
                         return;
 
-                    dirPath += "\\";
-
-                    AssimpGeneric.ExportScene(scene, AssimpGeneric.FileFormat.fbx, sfd.FileName);
-                    exportTextures(dirPath);
+                    // Rig + mesh only; the writer still adds its BindPose take.
+                    Kh2FbxExport.Write(sfd.FileName, Kh2FbxExport.LoadModel(), System.Array.Empty<Kh2Fbx.SampledClip>());
                 }
-            }
-        }
-
-        public void exportTextures(string filePath)
-        {
-            for (int i = 0; i < MdlxService.Instance.TextureFile.Images.Count; i++)
-            {
-                ModelTexture.Texture texture = MdlxService.Instance.TextureFile.Images[i];
-                BitmapSource bitmapImage = texture.GetBimapSource();
-
-                string fullPath = filePath + "Texture" + i.ToString("D4");
-                string finalPath = fullPath;
-                int repeat = 0;
-                while (File.Exists(finalPath))
-                {
-                    repeat++;
-                    finalPath = fullPath + " (" + repeat + ")";
-                }
-
-                AssimpGeneric.ExportBitmapSourceAsPng(bitmapImage, fullPath);
             }
         }
     }
