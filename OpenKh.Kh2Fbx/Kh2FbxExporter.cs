@@ -4,25 +4,22 @@ using System.Numerics;
 
 namespace OpenKh.Kh2Fbx
 {
-    // Defaults reproduce the files kh2modelextract and the old Assimp+Blender pipeline produced,
-    // which existing Unity prefabs are bound to.
     public sealed record Kh2FbxExportOptions
     {
         // Name of the Null above the skeleton; takes are named "<RootName>|<clip>".
         public string RootName { get; init; } = Kh2FbxExporter.RootName;
 
-        // Unity builds a model's default pose from frame 0 of the FIRST take, and anything a clip
-        // doesn't key falls back to it. The BindPose take keeps that default at rest; tools that
-        // don't need it can turn it off.
+        // Writes a one-frame "BindPose" take first. Some importers take a model's default pose
+        // from frame 0 of the first take and fall back to it for anything a clip doesn't key;
+        // this keeps that default at rest. Tools that don't need it can turn it off.
         public bool WriteBindPoseTake { get; init; } = true;
     }
 
     // Writes one KH2 model (mesh groups + skeleton + skin) and any number of sampled clips as
     // a single FBX: one AnimationStack ("take") per clip, all on the same rig/bind pose.
     //
-    // Naming is kept identical to the files the old Assimp+Blender pipeline produced so
-    // existing Unity imports keep their clip/bone bindings: the armature root is a Null named
-    // "AxisCorrection", bones are "BoneNNNN", meshes "MeshNodeNNNN", takes
+    // Naming is stable so re-exports keep clip/bone bindings in downstream tools: the
+    // armature root is a Null named "AxisCorrection", bones are "BoneNNNN", meshes "MeshNodeNNNN", takes
     // "AxisCorrection|<clip>". Units are KH2's raw centimetres (UnitScaleFactor 1), Y up.
     public static class Kh2FbxExporter
     {
@@ -113,8 +110,8 @@ namespace OpenKh.Kh2Fbx
                 AddObject(Geometry(geomId, g, group));
                 ConnectOO(geomId, meshId);
 
-                // Material: texture wired to DiffuseColor and TransparencyFactor, matching what
-                // Blender's exporter produced (Unity derives transparency from the latter).
+                // Material: texture wired to DiffuseColor and TransparencyFactor, so importers
+                // that derive transparency from the latter pick up the texture's alpha.
                 FbxNode material = new FbxNode("Material", materialId, FbxNode.ObjectName($"Material{g:D4}", "Material"), "");
                 material.Add("Version", 102);
                 material.Add("ShadingModel", "Phong");
@@ -206,10 +203,9 @@ namespace OpenKh.Kh2Fbx
             AddObject(pose);
 
             // --- Animation --------------------------------------------------------------------
-            // A "BindPose" take goes first: Unity builds the model prefab's default pose from
-            // frame 0 of the FIRST take (not from Lcl/bind pose), and anything a clip doesn't key
-            // falls back to that default. Without this, unkeyed bones/axes snapped to IDLE's first
-            // frame instead of rest (confirmed in a Unity batch import, ~26 cm off).
+            // A "BindPose" take goes first: some importers build the default pose from frame 0
+            // of the FIRST take (not from Lcl/bind pose) and fall back to it for anything a clip
+            // doesn't key. Without it, unkeyed bones/axes snap to the first clip's first frame.
             FbxNode takes = new FbxNode("Takes");
             takes.Add("Current", "");
             IEnumerable<SampledClip> allClips = options.WriteBindPoseTake ? clips.Prepend(SampledClip.BindPose(rest)) : clips;
@@ -271,8 +267,9 @@ namespace OpenKh.Kh2Fbx
                                     ? (sharedKeys.Select(i => times[i]).ToArray(), sharedKeys.Select(i => values[i]).ToArray())
                                     : CurveReducer.Reduce(times, values, tolerance);
 
-                            // An axis pinned at its rest value needs no curve: Blender fills missing
-                            // axes from the bone's Lcl value, Unity from the default (BindPose) pose.
+                            // An axis pinned at its rest value needs no curve: importers fill a
+                            // missing axis from the bone's Lcl value or the default (BindPose) pose,
+                            // and both equal rest.
                             if (!(forceFirstAxis && axis == 0) && flat && MathF.Abs(values[0] - restValue) <= tolerance)
                             {
                                 nodeProps.Add(P("d|" + axes[axis], "Number", "", "A", (double)restValue));

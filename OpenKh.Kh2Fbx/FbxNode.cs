@@ -34,9 +34,9 @@ namespace OpenKh.Kh2Fbx
         public static string ObjectName(string name, string cls) => name + "\0\u0001" + cls;
     }
 
-    // FBX 7.4 binary encoder. Layout (header, null-record rules, footer) mirrors Blender's
-    // io_scene_fbx/encode_bin.py exactly, since Blender's output is known to load in both
-    // Blender and Unity's FBX SDK.
+    // FBX 7.4 binary encoder. Layout (header, null-record rules, footer) follows the
+    // open-source reference encoder in Blender's io_scene_fbx/encode_bin.py, whose output
+    // loads in the Autodesk FBX SDK and the common open-source readers.
     internal static class FbxBinaryWriter
     {
         private const int Version = 7400;

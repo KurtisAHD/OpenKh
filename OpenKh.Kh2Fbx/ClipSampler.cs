@@ -286,10 +286,10 @@ namespace OpenKh.Kh2Fbx
         }
 
         // Rotation is reduced on one shared set of key times, checked as a real angle against the
-        // sampled rotation under both ways importers fill the gaps: FBX/Unity interpolate the
-        // Euler angles linearly, Blender converts each key to a quaternion and interpolates that
-        // linearly. Reducing each Euler axis on its own passed per-axis checks but drifted up to
-        // ~0.5 degrees between keys in Blender.
+        // sampled rotation under both ways importers fill the gaps: interpolating the Euler
+        // angles linearly (the FBX default) or converting each key to a quaternion and
+        // interpolating that. Reducing each Euler axis on its own passed per-axis checks but
+        // drifted up to ~0.5 degrees between keys under quaternion interpolation.
         public static int[] ReduceRotation(float[] times, Vector3[] eulerDegrees, Quaternion[] actual, float toleranceDegrees)
         {
             int n = times.Length;
