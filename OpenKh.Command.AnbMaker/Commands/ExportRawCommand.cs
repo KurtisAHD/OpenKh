@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using McMaster.Extensions.CommandLineUtils;
 using OpenKh.Command.AnbMaker.Extensions;
 using OpenKh.Command.AnbMaker.Utils;
@@ -89,10 +89,10 @@ namespace OpenKh.Command.AnbMaker.Commands
 
             var sampleExport = new RawMotionExporter(sampleRaw).Export;
 
-            Assimp.Scene scene = new Assimp.Scene();
-            scene.RootNode = new Assimp.Node("RootNode");
+            SharpAssimp.Scene scene = new SharpAssimp.Scene();
+            scene.RootNode = new SharpAssimp.Node("RootNode");
 
-            var mat = new Assimp.Material();
+            var mat = new SharpAssimp.Material();
             mat.Name = "Dummy";
 
             var matIdx = scene.Materials.Count;
@@ -114,7 +114,7 @@ namespace OpenKh.Command.AnbMaker.Commands
 
                 void AddVert(float x, float y, float z) =>
                     fbxMesh.Vertices.Add(
-                        new Assimp.Vector3D(x, y, z)
+                        new Vector3(x, y, z)
                     );
 
                 float boxLen = 1;
@@ -168,7 +168,7 @@ namespace OpenKh.Command.AnbMaker.Commands
             {
                 var thisExport = new RawMotionExporter(motionSet.raw).Export;
 
-                var fbxAnim = new Assimp.Animation();
+                var fbxAnim = new SharpAssimp.Animation();
                 fbxAnim.Name = motionSet.name;
                 fbxAnim.DurationInTicks = thisExport.FrameCount;
                 fbxAnim.TicksPerSecond = thisExport.FramesPerSecond;
@@ -219,7 +219,7 @@ namespace OpenKh.Command.AnbMaker.Commands
                 // One animation per one fbx.
                 // Multiple animations can be stored.
                 // But Blender cannot import no more than one animation per one node.
-                Assimp.AssimpContext context = new Assimp.AssimpContext();
+                SharpAssimp.AssimpContext context = new SharpAssimp.AssimpContext();
                 context.ExportFile(scene, OutputFbx + $".{motionSet.name}.fbx", "fbx");
 
                 scene.Animations.Remove(fbxAnim);

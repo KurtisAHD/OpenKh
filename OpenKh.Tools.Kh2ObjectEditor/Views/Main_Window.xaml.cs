@@ -175,7 +175,7 @@ namespace OpenKh.Tools.Kh2ObjectEditor.Views
                     }
                 }
 
-                Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
+                SharpAssimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
 
                 System.Windows.Forms.SaveFileDialog sfd;
                 sfd = new System.Windows.Forms.SaveFileDialog();

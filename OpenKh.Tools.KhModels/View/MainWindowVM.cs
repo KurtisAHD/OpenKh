@@ -236,9 +236,9 @@ namespace OpenKh.Tools.KhModels.View
         public void ExportModel(AssimpGeneric.FileFormat fileFormat = AssimpGeneric.FileFormat.fbx)
         {
             //MtModel model = VpService.Models[0];
-            //Assimp.Scene scene = AssimpExporter.ExportScene(model);
+            //SharpAssimp.Scene scene = AssimpExporter.ExportScene(model);
 
-            Assimp.Scene scene = AssimpExporter.ExportScene(VpController.ModelVisuals.Keys.ToList());
+            SharpAssimp.Scene scene = AssimpExporter.ExportScene(VpController.ModelVisuals.Keys.ToList());
 
             System.Windows.Forms.SaveFileDialog sfd;
             sfd = new System.Windows.Forms.SaveFileDialog();
@@ -281,7 +281,7 @@ namespace OpenKh.Tools.KhModels.View
                     return;
 
                 Mdls model = new Mdls(Filepath);
-                Assimp.Scene scene = Kh1MdlsAssimp.getAssimpScene(model);
+                SharpAssimp.Scene scene = Kh1MdlsAssimp.getAssimpScene(model);
 
                 AssimpGeneric.ExportScene(scene, fileFormat, sfd.FileName);
 

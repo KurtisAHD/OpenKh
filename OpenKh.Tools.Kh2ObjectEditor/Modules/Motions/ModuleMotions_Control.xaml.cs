@@ -154,7 +154,7 @@ namespace OpenKh.Tools.Kh2ObjectEditor.Views
                     barEntry.Stream.Position = 0;
                 }
             }
-            Assimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
+            SharpAssimp.Scene scene = Kh2MdlxAssimp.getAssimpScene(model);
             Kh2MdlxAssimp.AddAnimation(scene, MdlxService.Instance.MdlxBar, animation);
 
             System.Windows.Forms.SaveFileDialog sfd;

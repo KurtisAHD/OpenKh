@@ -25,10 +25,10 @@ namespace OpenKh.Command.AnbMaker.Commands
 
         protected int OnExecute(CommandLineApplication app)
         {
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(InputModel, Assimp.PostProcessSteps.None);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(InputModel, SharpAssimp.PostProcessSteps.None);
 
-            void Walk(Assimp.Node node, Matrix4x4 parent, int depth)
+            void Walk(SharpAssimp.Node node, Matrix4x4 parent, int depth)
             {
                 var more = "";
 

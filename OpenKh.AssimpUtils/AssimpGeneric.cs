@@ -1,3 +1,4 @@
+using OpenKh.Engine;
 using System.Numerics;
 using System.Windows.Media.Imaging;
 
@@ -5,14 +6,15 @@ namespace OpenKh.AssimpUtils
 {
     public class AssimpGeneric
     {
-        public static Microsoft.Xna.Framework.Matrix ToXna(Assimp.Matrix4x4 m) => new Microsoft.Xna.Framework.Matrix(m.A1, m.B1, m.C1, m.D1, m.A2, m.B2, m.C2, m.D2, m.A3, m.B3, m.C3, m.D3, m.A4, m.B4, m.C4, m.D4);
-        public static Assimp.Matrix4x4 ToAssimp(Microsoft.Xna.Framework.Matrix m) => new Assimp.Matrix4x4(m.M11, m.M21, m.M31, m.M41, m.M12, m.M22, m.M32, m.M42, m.M13, m.M23, m.M33, m.M43, m.M14, m.M24, m.M34, m.M44);
+        // SharpAssimp matrices use Assimp's row-major layout (translation in M14/M24/M34),
+        // the transpose of the System.Numerics/XNA convention.
+        public static Microsoft.Xna.Framework.Matrix ToXna(Matrix4x4 m) => new Microsoft.Xna.Framework.Matrix(m.M11, m.M21, m.M31, m.M41, m.M12, m.M22, m.M32, m.M42, m.M13, m.M23, m.M33, m.M43, m.M14, m.M24, m.M34, m.M44);
+        public static Matrix4x4 ToAssimp(Microsoft.Xna.Framework.Matrix m) => new Matrix4x4(m.M11, m.M21, m.M31, m.M41, m.M12, m.M22, m.M32, m.M42, m.M13, m.M23, m.M33, m.M43, m.M14, m.M24, m.M34, m.M44);
 
-        public static Assimp.Matrix4x4 ToAssimp(Matrix4x4 m) => new Assimp.Matrix4x4(m.M11, m.M21, m.M31, m.M41, m.M12, m.M22, m.M32, m.M42, m.M13, m.M23, m.M33, m.M43, m.M14, m.M24, m.M34, m.M44);
-        //public static Matrix4x4 ToNumerics(Assimp.Matrix4x4 m) => new Matrix4x4(m.A1, m.A2, m.A3, m.A4, m.B1, m.B2, m.B3, m.B4, m.C1, m.C2, m.C3, m.C4, m.D1, m.D2, m.D3, m.D4); // Pretty sure this is wrong
-        public static Matrix4x4 ToNumerics(Assimp.Matrix4x4 m) => new Matrix4x4(m.A1, m.B1, m.C1, m.D1, m.A2, m.B2, m.C2, m.D2, m.A3, m.B3, m.C3, m.D3, m.A4, m.B4, m.C4, m.D4);
-        public static Assimp.Vector3D ToAssimp(Vector3 v) => new Assimp.Vector3D(v.X, v.Y, v.Z);
-        public static Vector3 ToNumerics(Assimp.Vector3D v) => new Vector3(v.X, v.Y, v.Z);
+        public static Matrix4x4 ToAssimp(Matrix4x4 m) => Matrix4x4.Transpose(m);
+        public static Matrix4x4 ToNumerics(Matrix4x4 m) => Matrix4x4.Transpose(m);
+        public static Vector3 ToAssimp(Vector3 v) => v;
+        public static Vector3 ToNumerics(Vector3 v) => v;
 
         // File formats supported by Assimp
         public enum FileFormat
@@ -46,10 +48,10 @@ namespace OpenKh.AssimpUtils
             assjson
         }
 
-        public static Assimp.Scene getAssimpSceneFromFile(string filePath)
+        public static SharpAssimp.Scene getAssimpSceneFromFile(string filePath)
         {
-            Assimp.AssimpContext assimp = new Assimp.AssimpContext();
-            Assimp.Scene scene = assimp.ImportFile(filePath);
+            SharpAssimp.AssimpContext assimp = new SharpAssimp.AssimpContext();
+            SharpAssimp.Scene scene = assimp.ImportFile(filePath);
 
             return scene;
         }
@@ -69,12 +71,12 @@ namespace OpenKh.AssimpUtils
             }
         }
         // Exports the given Assimp scene in the given format
-        public static void ExportScene(Assimp.Scene scene, FileFormat format = FileFormat.fbx, string filename = "fileout.fbx")
+        public static void ExportScene(SharpAssimp.Scene scene, FileFormat format = FileFormat.fbx, string filename = "fileout.fbx")
         {
-            Assimp.AssimpContext context = new Assimp.AssimpContext();
+            SharpAssimp.AssimpContext context = new SharpAssimp.AssimpContext();
             context.ExportFile(scene, filename, format.ToString());
         }
-        public static void ExportSceneWithDialog(Assimp.Scene scene, FileFormat format = FileFormat.fbx, string filename = "fileout")
+        public static void ExportSceneWithDialog(SharpAssimp.Scene scene, FileFormat format = FileFormat.fbx, string filename = "fileout")
         {
             SaveFileDialog sfd;
             sfd = new SaveFileDialog();
@@ -83,17 +85,17 @@ namespace OpenKh.AssimpUtils
             sfd.ShowDialog();
             if (sfd.FileName != "")
             {
-                Assimp.AssimpContext context = new Assimp.AssimpContext();
+                SharpAssimp.AssimpContext context = new SharpAssimp.AssimpContext();
                 context.ExportFile(scene, sfd.FileName, format.ToString());
             }
         }
         
 
         // Gets a basic Assimp scene. It also contains notes on how to make a valid Assimp scene for exporting
-        public static Assimp.Scene GetBaseScene()
+        public static SharpAssimp.Scene GetBaseScene()
         {
-            Assimp.Scene scene = new Assimp.Scene();
-            scene.RootNode = new Assimp.Node("RootNode");
+            SharpAssimp.Scene scene = new SharpAssimp.Scene();
+            scene.RootNode = new SharpAssimp.Node("RootNode");
 
             return scene;
 
@@ -109,27 +111,28 @@ namespace OpenKh.AssimpUtils
         }
 
         // Returns the Transform matrix used by Assimp nodes based on SRT data. Note: the rotation uses quaternions
-        public static Assimp.Matrix4x4 GetNodeTransformMatrix(Vector3 scale, Vector3 radianRotation, Vector3 translation)
+        public static Matrix4x4 GetNodeTransformMatrix(Vector3 scale, Vector3 radianRotation, Vector3 translation)
         {
-            Assimp.Matrix4x4 nodeTransform = Assimp.Matrix4x4.Identity;
+            Matrix4x4 nodeTransform = Matrix4x4.Identity;
 
-            nodeTransform *= Assimp.Matrix4x4.FromScaling(new Assimp.Vector3D(scale.X, scale.Y, scale.Z));
+            nodeTransform = AssimpMath.Multiply(nodeTransform, AssimpMath.FromScaling(scale));
 
-            Assimp.Matrix4x4 rotation = Assimp.Matrix4x4.FromRotationX(radianRotation.X) *
-                                        Assimp.Matrix4x4.FromRotationY(radianRotation.Y) *
-                                        Assimp.Matrix4x4.FromRotationZ(radianRotation.Z);
+            Matrix4x4 rotation = AssimpMath.Multiply(
+                                    AssimpMath.Multiply(AssimpMath.FromRotationX(radianRotation.X),
+                                                        AssimpMath.FromRotationY(radianRotation.Y)),
+                                    AssimpMath.FromRotationZ(radianRotation.Z));
 
-            nodeTransform *= rotation;
+            nodeTransform = AssimpMath.Multiply(nodeTransform, rotation);
 
-            nodeTransform *= Assimp.Matrix4x4.FromTranslation(new Assimp.Vector3D(translation.X, translation.Y, translation.Z));
+            nodeTransform = AssimpMath.Multiply(nodeTransform, AssimpMath.FromTranslation(translation));
 
             return nodeTransform;
         }
 
         // Finds a bone by name in a bone list
-        public static Assimp.Bone FindBone(List<Assimp.Bone> list_bones, string boneName)
+        public static SharpAssimp.Bone FindBone(List<SharpAssimp.Bone> list_bones, string boneName)
         {
-            foreach(Assimp.Bone bone in list_bones)
+            foreach(SharpAssimp.Bone bone in list_bones)
             {
                 if (bone.Name == boneName)
                     return bone;
@@ -139,11 +142,11 @@ namespace OpenKh.AssimpUtils
         }
 
         // Adds the given weight to the mesh's bone. Usually uneeded since all meshes need to have all bones and it's done in one go
-        public static void AddVertexWeight(Assimp.Mesh mesh, int boneId, int vertexId, float weight = 1)
+        public static void AddVertexWeight(SharpAssimp.Mesh mesh, int boneId, int vertexId, float weight = 1)
         {
             bool boneExists = false;
-            Assimp.Bone bone = FindBone(mesh.Bones, "Bone" + boneId);
-            Assimp.VertexWeight vertexWeight = new Assimp.VertexWeight(vertexId, weight);
+            SharpAssimp.Bone bone = FindBone(mesh.Bones, "Bone" + boneId);
+            SharpAssimp.VertexWeight vertexWeight = new SharpAssimp.VertexWeight(vertexId, weight);
 
             if (bone != null)
             {
@@ -151,9 +154,9 @@ namespace OpenKh.AssimpUtils
             }
             else
             {
-                List<Assimp.VertexWeight> boneWeights = new List<Assimp.VertexWeight>();
+                List<SharpAssimp.VertexWeight> boneWeights = new List<SharpAssimp.VertexWeight>();
                 boneWeights.Add(vertexWeight);
-                mesh.Bones.Add(new Assimp.Bone("Bone" + boneId, Assimp.Matrix3x3.Identity, boneWeights.ToArray()));
+                mesh.Bones.Add(new SharpAssimp.Bone("Bone" + boneId, SharpAssimp.Matrix3x3.Identity, boneWeights.ToArray()));
             }
         }
 

@@ -10,7 +10,7 @@ namespace OpenKh.Command.MapGen.Models
     /// - Usually this is a triangle (3 coords) or triangle fan (4 coords).
     ///   There may be more (5 or greater), but it is not supported yet.
     /// 
-    /// - `Assimp.PostProcessSteps.Triangulate` option will resolve all kinds of polygon shapes.
+    /// - `SharpAssimp.PostProcessSteps.Triangulate` option will resolve all kinds of polygon shapes.
     ///   But generated UV coords seem to be broken.
     /// </remarks>
     public class SingleFace

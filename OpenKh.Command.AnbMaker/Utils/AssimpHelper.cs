@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using NLog;
 using OpenKh.Command.AnbMaker.Utils.AssimpSupplemental;
 

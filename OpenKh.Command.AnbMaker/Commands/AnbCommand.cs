@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using McMaster.Extensions.CommandLineUtils;
 using NLog;
 using OpenKh.Command.AnbMaker.Commands.Interfaces;
@@ -7,8 +7,10 @@ using OpenKh.Command.AnbMaker.Extensions;
 using OpenKh.Command.AnbMaker.Utils;
 using OpenKh.Command.AnbMaker.Utils.Builder;
 using OpenKh.Command.AnbMaker.Utils.Builder.Models;
+using OpenKh.Engine;
 using OpenKh.Kh2;
 using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 using static OpenKh.Command.AnbMaker.Utils.Builder.RawMotionBuilder;
 using static OpenKh.Kh2.Motion;
 
@@ -114,8 +116,8 @@ namespace OpenKh.Command.AnbMaker.Commands
                 float positionScaling
             )
             {
-                using var assimp = new Assimp.AssimpContext();
-                var scene = assimp.ImportFile(inputModel, Assimp.PostProcessSteps.None);
+                using var assimp = new SharpAssimp.AssimpContext();
+                var scene = assimp.ImportFile(inputModel, SharpAssimp.PostProcessSteps.None);
 
                 var outputList = new List<RawMotionBuilder.Parameter>();
 
@@ -131,9 +133,9 @@ namespace OpenKh.Command.AnbMaker.Commands
 
                 var hits = new List<(Mesh mesh, Matrix4x4 transform)>();
 
-                void WalkNode(Assimp.Node node, Matrix4x4 parentTransform)
+                void WalkNode(SharpAssimp.Node node, Matrix4x4 parentTransform)
                 {
-                    var transform = node.Transform * parentTransform;
+                    var transform = AssimpMath.Multiply(node.Transform, parentTransform);
 
                     foreach (var childNode in node.Children)
                     {
@@ -185,10 +187,11 @@ namespace OpenKh.Command.AnbMaker.Commands
 
                                     var oldTransform = armatureNode.Transform;
 
-                                    oldTransform.Decompose(
-                                        out Vector3D initialScaling,
+                                    AssimpMath.Decompose(
+                                        oldTransform,
+                                        out Vector3 initialScaling,
                                         out Quaternion initialQuaternion,
-                                        out Vector3D initialTranslation
+                                        out Vector3 initialTranslation
                                     );
 
                                     var hit = fbxAnim.NodeAnimationChannels.FirstOrDefault(it => it.NodeName == name);
@@ -205,17 +208,17 @@ namespace OpenKh.Command.AnbMaker.Commands
                                         ? initialScaling
                                         : hit.ScalingKeys.GetInterpolatedVector(frameIdx);
 
-                                    Vector3D FixScaling(Vector3D value) =>
+                                    Vector3 FixScaling(Vector3 value) =>
                                         value;
 
-                                    Vector3D FixPos(Vector3D value) =>
+                                    Vector3 FixPos(Vector3 value) =>
                                         value * positionScaling;
 
-                                    var newTransform = Matrix4x4.Identity
-                                        * new Matrix4x4(rotation.GetMatrix())
-                                        * Matrix4x4.FromScaling(FixScaling(scale))
-                                        * Matrix4x4.FromTranslation(FixPos(translation))
-                                        ;
+                                    var newTransform = AssimpMath.Multiply(
+                                        AssimpMath.Multiply(
+                                            AssimpMath.Multiply(Matrix4x4.Identity, AssimpMath.GetMatrix(rotation)),
+                                            AssimpMath.FromScaling(FixScaling(scale))),
+                                        AssimpMath.FromTranslation(FixPos(translation)));
 
                                     return newTransform.ToDotNetMatrix4x4();
                                 }

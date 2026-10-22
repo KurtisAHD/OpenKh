@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using OpenKh.Command.MapGen.Interfaces;
 using OpenKh.Command.MapGen.Models;
 using OpenKh.Kh2;

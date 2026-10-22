@@ -1,3 +1,4 @@
+using OpenKh.Engine;
 using OpenKh.Engine.Parsers;
 using OpenKh.Kh2;
 using OpenKh.Kh2.Models;
@@ -13,9 +14,9 @@ namespace OpenKh.AssimpUtils
         /****************
          * PROCESSES
          ****************/
-        public static Assimp.Scene getAssimpScene(MdlxParser mParser)
+        public static SharpAssimp.Scene getAssimpScene(MdlxParser mParser)
         {
-            Assimp.Scene scene = AssimpGeneric.GetBaseScene();
+            SharpAssimp.Scene scene = AssimpGeneric.GetBaseScene();
 
             // Divide the model in a mesh per texture and each mesh in its meshDescriptors
             Dictionary<int, List<MeshDescriptor>> dic_meshDescriptorsByMeshId = Kh2MdlxAssimp.getMeshDescriptos(mParser);
@@ -23,16 +24,16 @@ namespace OpenKh.AssimpUtils
             // MESHES AND THEIR DATA
             for (int i = 0; i < dic_meshDescriptorsByMeshId.Keys.Count; i++)
             {
-                Assimp.Mesh iMesh = new Assimp.Mesh("Mesh" + i, Assimp.PrimitiveType.Triangle);
+                SharpAssimp.Mesh iMesh = new SharpAssimp.Mesh("Mesh" + i, SharpAssimp.PrimitiveType.Triangle);
                 iMesh.UVComponentCount[0] = 2; // Required for some reason
 
                 // TEXTURE
-                Assimp.TextureSlot texture = new Assimp.TextureSlot();
+                SharpAssimp.TextureSlot texture = new SharpAssimp.TextureSlot();
                 texture.FilePath = "Texture" + i + "." + System.Drawing.Imaging.ImageFormat.Png.ToString().ToLower(); /* Not planning to export them in another extension right. */
-                texture.TextureType = Assimp.TextureType.Diffuse;
+                texture.TextureType = SharpAssimp.TextureType.Diffuse;
 
                 // MATERIAL
-                Assimp.Material mat = new Assimp.Material();
+                SharpAssimp.Material mat = new SharpAssimp.Material();
                 mat.Name = "Material" + i;
                 mat.TextureDiffuse = texture;
                 iMesh.MaterialIndex = i;
@@ -41,13 +42,13 @@ namespace OpenKh.AssimpUtils
                 // BONES - Assimp requires all of the bones even if they don't have weights
                 for (int j = 0; j < mParser.Bones.Count; j++)
                 {
-                    iMesh.Bones.Add(new Assimp.Bone("Bone" + j, Assimp.Matrix3x3.Identity, new Assimp.VertexWeight[0]));
+                    iMesh.Bones.Add(new SharpAssimp.Bone("Bone" + j, SharpAssimp.Matrix3x3.Identity, new SharpAssimp.VertexWeight[0]));
                 }
 
                 scene.Meshes.Add(iMesh);
 
                 // NODE
-                Assimp.Node iMeshNode = new Assimp.Node("MeshNode" + i);
+                SharpAssimp.Node iMeshNode = new SharpAssimp.Node("MeshNode" + i);
                 iMeshNode.MeshIndices.Add(i);
 
                 scene.RootNode.Children.Add(iMeshNode);
@@ -58,21 +59,21 @@ namespace OpenKh.AssimpUtils
             for (int i = 0; i < dic_meshDescriptorsByMeshId.Keys.Count; i++)
             {
                 int currentVertex = 0; // Vertex index is provided per mesh, not global
-                Assimp.Mesh iMesh = scene.Meshes[i];
+                SharpAssimp.Mesh iMesh = scene.Meshes[i];
 
                 foreach (MeshDescriptor iMeshDesc in dic_meshDescriptorsByMeshId[i])
                 {
                     foreach (var (vertex, boneAssigns) in iMeshDesc.Vertices.Zip(iMeshDesc.VertexBoneWeights))
                     {
-                        iMesh.Vertices.Add(new Assimp.Vector3D(vertex.X, vertex.Y, vertex.Z));
-                        iMesh.TextureCoordinateChannels[0].Add(new Assimp.Vector3D(vertex.Tu, 1 - vertex.Tv, 0));
+                        iMesh.Vertices.Add(new Vector3(vertex.X, vertex.Y, vertex.Z));
+                        iMesh.TextureCoordinateChannels[0].Add(new Vector3(vertex.Tu, 1 - vertex.Tv, 0));
 
                         // VERTEX WEIGHTS
                         foreach (var boneAssign in boneAssigns)
                         {
-                            Assimp.Bone bone = AssimpGeneric.FindBone(iMesh.Bones, "Bone" + boneAssign.MatrixIndex);
+                            SharpAssimp.Bone bone = AssimpGeneric.FindBone(iMesh.Bones, "Bone" + boneAssign.MatrixIndex);
                             mParser.skinnedBones[boneAssign.MatrixIndex] = true;
-                            bone.VertexWeights.Add(new Assimp.VertexWeight(currentVertex, boneAssign.Weight));
+                            bone.VertexWeights.Add(new SharpAssimp.VertexWeight(currentVertex, boneAssign.Weight));
                         }
 
                         currentVertex++;
@@ -81,14 +82,14 @@ namespace OpenKh.AssimpUtils
             }
 
             // FACES
-            foreach (Assimp.Mesh iMesh in scene.Meshes)
+            foreach (SharpAssimp.Mesh iMesh in scene.Meshes)
             {
                 // It just so happens that vertices are ordered for their faces. Write the correct code later.
                 int faceCount = iMesh.Vertices.Count / 3;
                 for (int i = 0; i < faceCount; i++)
                 {
                     int baseIndex = i * 3;
-                    iMesh.Faces.Add(new Assimp.Face(new int[] { baseIndex, baseIndex + 1, baseIndex + 2 }));
+                    iMesh.Faces.Add(new SharpAssimp.Face(new int[] { baseIndex, baseIndex + 1, baseIndex + 2 }));
                 }
             }
 
@@ -99,9 +100,9 @@ namespace OpenKh.AssimpUtils
             foreach (Mdlx.Bone bone in mParser.Bones)
             {
                 string boneName = "Bone" + bone.Index;
-                Assimp.Node boneNode = new Assimp.Node(boneName);
+                SharpAssimp.Node boneNode = new SharpAssimp.Node(boneName);
 
-                Assimp.Node parentNode;
+                SharpAssimp.Node parentNode;
                 if (bone.Parent == -1)
                 {
                     parentNode = scene.RootNode;
@@ -123,9 +124,9 @@ namespace OpenKh.AssimpUtils
 
             OpenKh.Engine.Monogame.Helpers.MatrixRecursivity.ComputeMatrices(ref matricesToReverse, mParser);
 
-            foreach (Assimp.Mesh mesh in scene.Meshes)
+            foreach (SharpAssimp.Mesh mesh in scene.Meshes)
             {
-                foreach (Assimp.Bone bone in mesh.Bones)
+                foreach (SharpAssimp.Bone bone in mesh.Bones)
                 {
                     bone.OffsetMatrix = AssimpGeneric.ToAssimp(Microsoft.Xna.Framework.Matrix.Invert(matricesToReverse[matricesToReverseNames.IndexOf(bone.Name)]));
                 }
@@ -148,17 +149,17 @@ namespace OpenKh.AssimpUtils
             return output;
         }
 
-        public static Assimp.Scene getAssimpScene(ModelSkeletal model)
+        public static SharpAssimp.Scene getAssimpScene(ModelSkeletal model)
         {
-            Assimp.Scene scene = AssimpGeneric.GetBaseScene();
+            SharpAssimp.Scene scene = AssimpGeneric.GetBaseScene();
 
-            List<Assimp.TextureSlot> textures = new List<Assimp.TextureSlot>();
-            List<Assimp.Material> materials = new List<Assimp.Material>();
+            List<SharpAssimp.TextureSlot> textures = new List<SharpAssimp.TextureSlot>();
+            List<SharpAssimp.Material> materials = new List<SharpAssimp.Material>();
             for (int i = 0; i < model.TextureCount; i++)
             {
-                Assimp.TextureSlot texture = new Assimp.TextureSlot();
+                SharpAssimp.TextureSlot texture = new SharpAssimp.TextureSlot();
                 texture.FilePath = "Texture" + i.ToString("D4");
-                texture.TextureType = Assimp.TextureType.Diffuse;
+                texture.TextureType = SharpAssimp.TextureType.Diffuse;
                 textures.Add(texture);
             }
 
@@ -167,16 +168,16 @@ namespace OpenKh.AssimpUtils
             for (int i = 0; i < model.Groups.Count; i++)
             {
                 ModelSkeletal.SkeletalGroup group = model.Groups[i];
-                Assimp.Mesh iMesh = new Assimp.Mesh("Mesh" + i.ToString("D4"), Assimp.PrimitiveType.Triangle);
+                SharpAssimp.Mesh iMesh = new SharpAssimp.Mesh("Mesh" + i.ToString("D4"), SharpAssimp.PrimitiveType.Triangle);
                 iMesh.UVComponentCount[0] = 2; // Required for some reason
 
                 // TEXTURE
-                /*Assimp.TextureSlot texture = new Assimp.TextureSlot();
+                /*SharpAssimp.TextureSlot texture = new SharpAssimp.TextureSlot();
                 texture.FilePath = "Texture" + group.Header.TextureIndex;
-                texture.TextureType = Assimp.TextureType.Diffuse;*/
+                texture.TextureType = SharpAssimp.TextureType.Diffuse;*/
 
                 // MATERIAL
-                Assimp.Material mat = new Assimp.Material();
+                SharpAssimp.Material mat = new SharpAssimp.Material();
                 mat.Name = "Material" + i.ToString("D4");
                 mat.TextureDiffuse = textures[(int)group.Header.TextureIndex];
                 //mat.TextureDiffuse = texture;
@@ -187,7 +188,7 @@ namespace OpenKh.AssimpUtils
                 // BONES - Assimp requires all of the bones even if they don't have weights
                 for (int j = 0; j < model.Bones.Count; j++)
                 {
-                    iMesh.Bones.Add(new Assimp.Bone("Bone" + j.ToString("D4"), Assimp.Matrix3x3.Identity, new Assimp.VertexWeight[0]));
+                    iMesh.Bones.Add(new SharpAssimp.Bone("Bone" + j.ToString("D4"), SharpAssimp.Matrix3x3.Identity, new SharpAssimp.VertexWeight[0]));
                 }
 
                 // VERTICES
@@ -196,16 +197,16 @@ namespace OpenKh.AssimpUtils
                 {
                     //Vector3 globalPosition = ModelCommon.getAbsolutePosition(vertex.BPositions, boneMatrices);
 
-                    iMesh.Vertices.Add(new Assimp.Vector3D(vertex.Position.X, vertex.Position.Y, vertex.Position.Z));
+                    iMesh.Vertices.Add(new Vector3(vertex.Position.X, vertex.Position.Y, vertex.Position.Z));
 
-                    iMesh.TextureCoordinateChannels[0].Add(new Assimp.Vector3D(vertex.U / 4096.0f, 1 - (vertex.V / 4096.0f), 0)); // Stored as int, convert to float
+                    iMesh.TextureCoordinateChannels[0].Add(new Vector3(vertex.U / 4096.0f, 1 - (vertex.V / 4096.0f), 0)); // Stored as int, convert to float
 
                     // VERTEX WEIGHTS
                     foreach (ModelCommon.BPosition bPosition in vertex.BPositions)
                     {
-                        Assimp.Bone bone = AssimpGeneric.FindBone(iMesh.Bones, "Bone" + bPosition.BoneIndex.ToString("D4"));
+                        SharpAssimp.Bone bone = AssimpGeneric.FindBone(iMesh.Bones, "Bone" + bPosition.BoneIndex.ToString("D4"));
                         float weight = bPosition.Position.W == 0 ? 1 : bPosition.Position.W;
-                        bone.VertexWeights.Add(new Assimp.VertexWeight(currentVertex, weight));
+                        bone.VertexWeights.Add(new SharpAssimp.VertexWeight(currentVertex, weight));
                     }
 
                     // COLORS
@@ -215,13 +216,13 @@ namespace OpenKh.AssimpUtils
                         float G = vertex.Color.G / 255f;
                         float B = vertex.Color.B / 255f;
                         float A = vertex.Color.A / 255f;
-                        iMesh.VertexColorChannels[0].Add(new Assimp.Color4D(R, G, B, A));
+                        iMesh.VertexColorChannels[0].Add(new Vector4(R, G, B, A));
                     }
 
                     // NORMALS
                     if (vertex.Normal != null)
                     {
-                        iMesh.Normals.Add(new Assimp.Vector3D(vertex.Normal.X, vertex.Normal.Y, vertex.Normal.Z));
+                        iMesh.Normals.Add(new Vector3(vertex.Normal.X, vertex.Normal.Y, vertex.Normal.Z));
                     }
 
                     currentVertex++;
@@ -230,27 +231,27 @@ namespace OpenKh.AssimpUtils
                 // FACES
                 foreach (List<int> triangle in group.Mesh.Triangles)
                 {
-                    iMesh.Faces.Add(new Assimp.Face(new int[] { triangle[0], triangle[1], triangle[2] }));
+                    iMesh.Faces.Add(new SharpAssimp.Face(new int[] { triangle[0], triangle[1], triangle[2] }));
                 }
 
                 scene.Meshes.Add(iMesh);
 
                 // NODE
-                Assimp.Node iMeshNode = new Assimp.Node("MeshNode" + i.ToString("D4"));
+                SharpAssimp.Node iMeshNode = new SharpAssimp.Node("MeshNode" + i.ToString("D4"));
                 iMeshNode.MeshIndices.Add(i);
 
                 scene.RootNode.Children.Add(iMeshNode);
             }
 
             // BONES (Node hierarchy)
-            //Assimp.Node armatureNode = new Assimp.Node("Armature");
+            //SharpAssimp.Node armatureNode = new SharpAssimp.Node("Armature");
             //scene.RootNode.Children.Add(armatureNode);
             foreach (ModelCommon.Bone bone in model.Bones)
             {
                 string boneName = "Bone" + bone.Index.ToString("D4");
-                Assimp.Node boneNode = new Assimp.Node(boneName);
+                SharpAssimp.Node boneNode = new SharpAssimp.Node(boneName);
 
-                Assimp.Node parentNode;
+                SharpAssimp.Node parentNode;
                 if (bone.ParentIndex == -1)
                 {
                     //parentNode = armatureNode;
@@ -271,7 +272,7 @@ namespace OpenKh.AssimpUtils
             return scene;
         }
 
-        public static VifMesh getVifMeshFromAssimp(Assimp.Mesh mesh, Matrix4x4[] boneMatrices)
+        public static VifMesh getVifMeshFromAssimp(SharpAssimp.Mesh mesh, Matrix4x4[] boneMatrices)
         {
             VifMesh vifMesh = new VifMesh();
             vifMesh.BoneMatrices = boneMatrices;
@@ -292,10 +293,10 @@ namespace OpenKh.AssimpUtils
                 vertex.UvCoord = new VifCommon.UVCoord(u, v);
                 if (mesh.HasVertexColors(0))
                 {
-                    byte R = (byte)(mesh.VertexColorChannels[0][i].R * 255);
-                    byte G = (byte)(mesh.VertexColorChannels[0][i].G * 255);
-                    byte B = (byte)(mesh.VertexColorChannels[0][i].B * 255);
-                    byte A = (byte)(mesh.VertexColorChannels[0][i].A * 255);
+                    byte R = (byte)(mesh.VertexColorChannels[0][i].X * 255);
+                    byte G = (byte)(mesh.VertexColorChannels[0][i].Y * 255);
+                    byte B = (byte)(mesh.VertexColorChannels[0][i].Z * 255);
+                    byte A = (byte)(mesh.VertexColorChannels[0][i].W * 255);
                     vertex.Color = new VifCommon.VertexColor(R, G, B, A);
                 }
                 if(mesh.HasNormals)
@@ -311,7 +312,7 @@ namespace OpenKh.AssimpUtils
             {
                 for (int j = 0; j < mesh.Bones[i].VertexWeights.Count; j++)
                 {
-                    Assimp.VertexWeight vertexWeight = mesh.Bones[i].VertexWeights[j];
+                    SharpAssimp.VertexWeight vertexWeight = mesh.Bones[i].VertexWeights[j];
                     VifCommon.BoneRelativePosition relativePosition = new VifCommon.BoneRelativePosition();
 
                     relativePosition.BoneIndex = i;
@@ -367,10 +368,10 @@ namespace OpenKh.AssimpUtils
             return vifMesh;
         }
 
-        public static void AddAnimation(Assimp.Scene assimpScene, Bar mdlxBar, AnimationBinary animation)
+        public static void AddAnimation(SharpAssimp.Scene assimpScene, Bar mdlxBar, AnimationBinary animation)
         {
             // Set basic data
-            Assimp.Animation assimpAnimation = new Assimp.Animation();
+            SharpAssimp.Animation assimpAnimation = new SharpAssimp.Animation();
             assimpAnimation.Name = "EXPORT";
             assimpAnimation.DurationInTicks = animation.MotionFile.InterpolatedMotionHeader.FrameCount;
             assimpAnimation.TicksPerSecond = animation.MotionFile.InterpolatedMotionHeader.FrameData.FramesPerSecond;
@@ -394,10 +395,10 @@ namespace OpenKh.AssimpUtils
             Dictionary<float, Matrix4x4[]> frameMatrices = getMatricesForKeyFrames(mdlxBar, animation, keyframeTimes);
 
             // Prepare channels per bone
-            Dictionary<int, Assimp.NodeAnimationChannel> animationChannelsPerBone = new Dictionary<int, Assimp.NodeAnimationChannel>();
+            Dictionary<int, SharpAssimp.NodeAnimationChannel> animationChannelsPerBone = new Dictionary<int, SharpAssimp.NodeAnimationChannel>();
             for (int i = 0; i < animation.MotionFile.InterpolatedMotionHeader.BoneCount; i++)
             {
-                Assimp.NodeAnimationChannel nodeAnimChannel = new Assimp.NodeAnimationChannel();
+                SharpAssimp.NodeAnimationChannel nodeAnimChannel = new SharpAssimp.NodeAnimationChannel();
                 nodeAnimChannel.NodeName = "Bone" + i.ToString("D4");
                 animationChannelsPerBone.Add(i, nodeAnimChannel);
                 assimpAnimation.NodeAnimationChannels.Add(nodeAnimChannel);
@@ -420,7 +421,7 @@ namespace OpenKh.AssimpUtils
             {
                 for (int j = 0; j < frameMatrices[keyTime].Length; j++) // Bone
                 {
-                    Assimp.NodeAnimationChannel channel = animationChannelsPerBone[j];
+                    SharpAssimp.NodeAnimationChannel channel = animationChannelsPerBone[j];
 
                     Matrix4x4 currentFrameBoneMatrix = frameMatrices[keyTime][j];
 
@@ -431,20 +432,20 @@ namespace OpenKh.AssimpUtils
                         currentFrameBoneMatrix *= invertedParent;
                     }
 
-                    Assimp.Matrix4x4 assimpMatrix = AssimpGeneric.ToAssimp(currentFrameBoneMatrix);
-                    assimpMatrix.Decompose(out Assimp.Vector3D scaling, out Assimp.Quaternion rotation, out Assimp.Vector3D translation);
+                    Matrix4x4 assimpMatrix = AssimpGeneric.ToAssimp(currentFrameBoneMatrix);
+                    AssimpMath.Decompose(assimpMatrix, out Vector3 scaling, out Quaternion rotation, out Vector3 translation);
 
-                    Assimp.VectorKey positionKey = new Assimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, translation);
-                    Assimp.VectorKey scalingKey = new Assimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, new Assimp.Vector3D(RoundFloat(scaling.X), RoundFloat(scaling.Y), RoundFloat(scaling.Z)));
-                    //Assimp.VectorKey scalingKey = new Assimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, scaling);
-                    Assimp.QuaternionKey rotationKey = new Assimp.QuaternionKey(keyTime / assimpAnimation.TicksPerSecond, rotation);
+                    SharpAssimp.VectorKey positionKey = new SharpAssimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, translation);
+                    SharpAssimp.VectorKey scalingKey = new SharpAssimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, new Vector3(RoundFloat(scaling.X), RoundFloat(scaling.Y), RoundFloat(scaling.Z)));
+                    //SharpAssimp.VectorKey scalingKey = new SharpAssimp.VectorKey(keyTime / assimpAnimation.TicksPerSecond, scaling);
+                    SharpAssimp.QuaternionKey rotationKey = new SharpAssimp.QuaternionKey(keyTime / assimpAnimation.TicksPerSecond, rotation);
 
                     // Ignore duplicates
                     if(channel.PositionKeys.Count > 0)
                     {
-                        Assimp.VectorKey previousPositionKey = channel.PositionKeys[channel.PositionKeys.Count - 1];
-                        Assimp.VectorKey previousScalingKey = channel.ScalingKeys[channel.ScalingKeys.Count - 1];
-                        Assimp.QuaternionKey previousRotationKey = channel.RotationKeys[channel.RotationKeys.Count - 1];
+                        SharpAssimp.VectorKey previousPositionKey = channel.PositionKeys[channel.PositionKeys.Count - 1];
+                        SharpAssimp.VectorKey previousScalingKey = channel.ScalingKeys[channel.ScalingKeys.Count - 1];
+                        SharpAssimp.QuaternionKey previousRotationKey = channel.RotationKeys[channel.RotationKeys.Count - 1];
 
                         if (!positionKey.Equals(previousPositionKey))
                         {
@@ -493,18 +494,18 @@ namespace OpenKh.AssimpUtils
             return value;
         }
 
-        private static Assimp.NodeAnimationChannel getArmatureChannel(double startFrame, double endFrame, double framesPerSecond)
+        private static SharpAssimp.NodeAnimationChannel getArmatureChannel(double startFrame, double endFrame, double framesPerSecond)
         {
-            Assimp.NodeAnimationChannel armatureChannel = new Assimp.NodeAnimationChannel();
+            SharpAssimp.NodeAnimationChannel armatureChannel = new SharpAssimp.NodeAnimationChannel();
             armatureChannel.NodeName = "Armature";
 
-            armatureChannel.PositionKeys.Add(new Assimp.VectorKey(startFrame / framesPerSecond, new Assimp.Vector3D(0,0,0)));
-            armatureChannel.ScalingKeys.Add(new Assimp.VectorKey(startFrame / framesPerSecond, new Assimp.Vector3D(1, 1, 1)));
-            armatureChannel.RotationKeys.Add(new Assimp.QuaternionKey(startFrame / framesPerSecond, new Assimp.Quaternion(1, 0, 0, 0)));
+            armatureChannel.PositionKeys.Add(new SharpAssimp.VectorKey(startFrame / framesPerSecond, new Vector3(0,0,0)));
+            armatureChannel.ScalingKeys.Add(new SharpAssimp.VectorKey(startFrame / framesPerSecond, new Vector3(1, 1, 1)));
+            armatureChannel.RotationKeys.Add(new SharpAssimp.QuaternionKey(startFrame / framesPerSecond, Quaternion.Identity));
 
-            armatureChannel.PositionKeys.Add(new Assimp.VectorKey(endFrame / framesPerSecond, new Assimp.Vector3D(0, 0, 0)));
-            armatureChannel.ScalingKeys.Add(new Assimp.VectorKey(endFrame / framesPerSecond, new Assimp.Vector3D(1, 1, 1)));
-            armatureChannel.RotationKeys.Add(new Assimp.QuaternionKey(endFrame / framesPerSecond, new Assimp.Quaternion(1, 0, 0, 0)));
+            armatureChannel.PositionKeys.Add(new SharpAssimp.VectorKey(endFrame / framesPerSecond, new Vector3(0, 0, 0)));
+            armatureChannel.ScalingKeys.Add(new SharpAssimp.VectorKey(endFrame / framesPerSecond, new Vector3(1, 1, 1)));
+            armatureChannel.RotationKeys.Add(new SharpAssimp.QuaternionKey(endFrame / framesPerSecond, Quaternion.Identity));
 
             return armatureChannel;
         }

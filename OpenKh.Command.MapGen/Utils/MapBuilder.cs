@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using NLog;
 using OpenKh.Command.MapGen.Interfaces;
 using OpenKh.Command.MapGen.Models;
@@ -499,10 +499,10 @@ namespace OpenKh.Command.MapGen.Utils
 
         private List<SingleFace> ConvertModelIntoFaces(string modelFile, MapGenConfig config)
         {
-            logger.Debug($"Loading 3D model file \"{modelFile}\" using Assimp.");
+            logger.Debug($"Loading 3D model file \"{modelFile}\" using SharpAssimp.");
 
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(modelFile, Assimp.PostProcessSteps.PreTransformVertices);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(modelFile, SharpAssimp.PostProcessSteps.PreTransformVertices);
 
             var scale = config.scale;
 
@@ -564,7 +564,7 @@ namespace OpenKh.Command.MapGen.Utils
                     }
                 }
 
-                Vector3 Transform(Vector3D inputVertex)
+                Vector3 Transform(Vector3 inputVertex)
                 {
                     return Vector3.Transform(
                         new Vector3(inputVertex.X, inputVertex.Y, inputVertex.Z),
@@ -572,7 +572,7 @@ namespace OpenKh.Command.MapGen.Utils
                     );
                 }
 
-                Vector3 TransformNormal(Vector3D inputNormal)
+                Vector3 TransformNormal(Vector3 inputNormal)
                 {
                     return Vector3.Normalize(
                         Vector3.TransformNormal(
@@ -589,14 +589,14 @@ namespace OpenKh.Command.MapGen.Utils
                     ?? config.maxAlpha
                     ?? 128;
 
-                Color ConvertVertexColor(Assimp.Color4D clr) => new Color(
-                    (byte)Math.Min(255, clr.R * maxColorIntensity),
-                    (byte)Math.Min(255, clr.G * maxColorIntensity),
-                    (byte)Math.Min(255, clr.B * maxColorIntensity),
-                    (byte)Math.Min(255, clr.A * maxAlpha)
+                Color ConvertVertexColor(Vector4 clr) => new Color(
+                    (byte)Math.Min(255, clr.X * maxColorIntensity),
+                    (byte)Math.Min(255, clr.Y * maxColorIntensity),
+                    (byte)Math.Min(255, clr.Z * maxColorIntensity),
+                    (byte)Math.Min(255, clr.W * maxAlpha)
                 );
 
-                Vector2 Get2DCoord(Assimp.Vector3D vector3D) => new Vector2(
+                Vector2 Get2DCoord(Vector3 vector3D) => new Vector2(
                     vector3D.X,
                     1 - vector3D.Y
                 );

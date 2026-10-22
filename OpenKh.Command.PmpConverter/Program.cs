@@ -1,4 +1,4 @@
-using Assimp;
+using SharpAssimp;
 using McMaster.Extensions.CommandLineUtils;
 using OpenKh.Bbs;
 using OpenKh.Common.Utils;
@@ -327,8 +327,8 @@ namespace OpenKh.Command.PmpConverter
             List<MeshGroup> group = new List<MeshGroup>();
 
             const float Scale = 1.0f;
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(filePath, Assimp.PostProcessSteps.PreTransformVertices);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(filePath, SharpAssimp.PostProcessSteps.PreTransformVertices);
             var baseFilePath = Path.GetDirectoryName(filePath);
             if (String.IsNullOrEmpty(baseFilePath))
             {
@@ -337,7 +337,7 @@ namespace OpenKh.Command.PmpConverter
             TexList = new List<string>();
             TextureData = new List<Tm2>();
 
-            foreach (Assimp.Material mat in scene.Materials)
+            foreach (SharpAssimp.Material mat in scene.Materials)
             {
                 if (String.IsNullOrEmpty(mat.TextureDiffuse.FilePath))
                 {
@@ -386,14 +386,14 @@ namespace OpenKh.Command.PmpConverter
                         vertices[k].Z = x.Vertices[k].Z * Scale;
                         vertices[k].Tu = x.TextureCoordinateChannels[0][k].X;
                         vertices[k].Tv = 1.0f - x.TextureCoordinateChannels[0][k].Y;
-                        vertices[k].R = x.VertexColorChannels[0][k].R;
-                        vertices[k].G = x.VertexColorChannels[0][k].G;
-                        vertices[k].B = x.VertexColorChannels[0][k].B;
-                        vertices[k].A = x.VertexColorChannels[0][k].A;
+                        vertices[k].R = x.VertexColorChannels[0][k].X;
+                        vertices[k].G = x.VertexColorChannels[0][k].Y;
+                        vertices[k].B = x.VertexColorChannels[0][k].Z;
+                        vertices[k].A = x.VertexColorChannels[0][k].W;
                     }
 
                     meshDescriptor.Vertices = vertices;
-                    meshDescriptor.Indices = x.GetIndices();
+                    meshDescriptor.Indices = System.Linq.Enumerable.ToArray(x.GetIndices());
                     meshDescriptor.IsOpaque = false;
                     meshDescriptor.TextureIndex = x.MaterialIndex;
                     

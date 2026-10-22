@@ -20,8 +20,8 @@ namespace OpenKh.Command.AnbMaker.Utils.AssimpAnimSource
             var outputList = new List<BasicSourceMotion>();
             Parameters = outputList;
 
-            var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(inputModel, Assimp.PostProcessSteps.None);
+            var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(inputModel, SharpAssimp.PostProcessSteps.None);
 
             bool IsMeshNameMatched(string it) =>
                 string.IsNullOrEmpty(meshName)

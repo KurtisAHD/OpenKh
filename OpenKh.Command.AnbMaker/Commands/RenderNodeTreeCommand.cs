@@ -59,8 +59,8 @@ namespace OpenKh.Command.AnbMaker.Commands
 
         protected int OnExecute(CommandLineApplication app)
         {
-            using var assimp = new Assimp.AssimpContext();
-            var scene = assimp.ImportFile(InputModel, Assimp.PostProcessSteps.None);
+            using var assimp = new SharpAssimp.AssimpContext();
+            var scene = assimp.ImportFile(InputModel, SharpAssimp.PostProcessSteps.None);
 
             using var worldTreeRenderer = new TreeRenderer();
             using var bonesTreeRenderer = new TreeRenderer();
@@ -73,7 +73,7 @@ namespace OpenKh.Command.AnbMaker.Commands
                     500 - vec.Y
                     );
 
-            void Walk(Assimp.Node node, Matrix4x4 parent, int depth)
+            void Walk(SharpAssimp.Node node, Matrix4x4 parent, int depth)
             {
                 var thisMatrix = node.Transform.ToDotNetMatrix4x4() * parent;
 
